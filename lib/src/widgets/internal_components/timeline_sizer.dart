@@ -13,6 +13,10 @@ class TimelineSizer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final viewController = context.calendarController.viewController;
+    final isHorizontal = viewController is MultiDayViewController &&
+        viewController.viewConfiguration.isHorizontal;
+
     // Create the timeline widget.
     final calendarComponents = context.components;
     final bodyStyles = calendarComponents.multiDayComponentStyles.bodyStyles;
@@ -23,6 +27,7 @@ class TimelineSizer extends StatelessWidget {
     final timeline = bodyComponents.prototypeTimeLine.call(heightPerMinute, timeOfDayRange, timelineStyle);
 
     return _TimelineSizer(
+      isHorizontal: isHorizontal,
       timelineWidget: LayoutId(id: 1, child: timeline),
       child: LayoutId(id: 2, child: child),
     );
@@ -31,26 +36,39 @@ class TimelineSizer extends StatelessWidget {
 
 class _TimelineSizer extends MultiChildRenderObjectWidget {
   _TimelineSizer({
+    required this.isHorizontal,
     required this.timelineWidget,
     required this.child,
   }) : super(children: [timelineWidget, child]);
 
+  final bool isHorizontal;
   final Widget timelineWidget;
   final Widget child;
 
   @override
   RenderObject createRenderObject(BuildContext context) {
-    return _RenderTimelineSizer();
+    return _RenderTimelineSizer(isHorizontal: isHorizontal);
   }
 
   @override
-  void updateRenderObject(context, covariant renderObject) {}
+  void updateRenderObject(context, covariant _RenderTimelineSizer renderObject) {
+    renderObject.isHorizontal = isHorizontal;
+  }
 }
 
 class _RenderTimelineSizer extends RenderBox
     with
         ContainerRenderObjectMixin<RenderBox, MultiChildLayoutParentData>,
         RenderBoxContainerDefaultsMixin<RenderBox, MultiChildLayoutParentData> {
+  _RenderTimelineSizer({required bool isHorizontal}) : _isHorizontal = isHorizontal;
+
+  bool _isHorizontal;
+  set isHorizontal(bool value) {
+    if (_isHorizontal == value) return;
+    _isHorizontal = value;
+    markNeedsLayout();
+  }
+
   @override
   void setupParentData(RenderBox child) {
     if (child.parentData is! MultiChildLayoutParentData) {
@@ -66,7 +84,13 @@ class _RenderTimelineSizer extends RenderBox
     final child = childAfter(timeline)!;
     child.layout(constraints, parentUsesSize: true);
 
-    size = Size(timeline.size.width, child.size.height);
+    if (_isHorizontal) {
+      // Horizontal mode: timeline is on top, so reserve its height
+      size = Size(child.size.width, timeline.size.height);
+    } else {
+      // Vertical mode: timeline is on left, so reserve its width
+      size = Size(timeline.size.width, child.size.height);
+    }
   }
 
   @override

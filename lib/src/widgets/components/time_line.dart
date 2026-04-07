@@ -363,9 +363,18 @@ class PrototypeTimeline extends TimeLine {
 
   @override
   Widget build(BuildContext context) {
+    final viewController = context.calendarController.viewController;
+    final isHorizontal = viewController is MultiDayViewController &&
+        viewController.viewConfiguration.isHorizontal;
+
     final textStyle = this.textStyle(context);
     final textPadding = this.textPadding(context);
     final largestTextSize = this.largestTextSize(context, textStyle, textPadding);
-    return SizedBox(width: largestTextSize.width);
+
+    if (isHorizontal) {
+      return SizedBox(height: largestTextSize.height);
+    } else {
+      return SizedBox(width: largestTextSize.width);
+    }
   }
 }

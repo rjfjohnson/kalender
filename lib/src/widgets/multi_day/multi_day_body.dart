@@ -276,6 +276,7 @@ class _MultiDayPageState extends State<MultiDayPage> {
       padEnds: false,
       controller: widget.viewController.pageController,
       itemCount: widget.viewController.numberOfPages,
+      scrollDirection: _isHorizontal ? Axis.vertical : Axis.horizontal,
       physics: widget.configuration.pageScrollPhysics,
       onPageChanged: (index) {
         final visibleRange = _pageNavigation.dateTimeRangeFromIndex(index, context.location);
