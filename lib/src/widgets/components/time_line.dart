@@ -190,7 +190,9 @@ class TimeLine extends StatelessWidget with TimeLineUtils {
     final textPadding = this.textPadding(context);
     final itemSize = this.itemSize(context);
     final textCenterOffset = itemSize.height / 2;
-    final segmentDuration = this.segmentDuration(timeOfDayRange, heightPerMinute, itemSize.height);
+    // In horizontal mode, labels are spaced along the x-axis, so use width; vertical uses height.
+    final segmentItemSize = isHorizontal ? itemSize.width : itemSize.height;
+    final segmentDuration = this.segmentDuration(timeOfDayRange, heightPerMinute, segmentItemSize);
     final segments = timeOfDayRange.splitIntoSegments(segmentDuration);
     final positionedTimes = segments.indexed.map((e) {
       final (index, range) = e;

@@ -191,9 +191,13 @@ class _VerticalDragTargetState extends State<VerticalDragTarget> with SnapPoints
           onReschedule: (event) {
             // Calculate the size of the feedback widget.
             final eventDuration = event.duration;
-            final eventHeight = eventDuration.inMinutes * heightPerMinute;
+            final eventTimeAxisExtent = eventDuration.inMinutes * heightPerMinute;
             // Set the size of the feedback widget.
-            context.feedbackWidgetSizeNotifier.value = Size(dayWidth, eventHeight);
+            // In horizontal mode: width = time axis extent, height = day extent.
+            // In vertical mode: width = day extent, height = time axis extent.
+            context.feedbackWidgetSizeNotifier.value = _isHorizontal
+                ? Size(eventTimeAxisExtent, dayWidth)
+                : Size(dayWidth, eventTimeAxisExtent);
             // Select the event as an internal one.
             controller.selectEvent(event, internal: true);
           },
@@ -210,6 +214,65 @@ class _VerticalDragTargetState extends State<VerticalDragTarget> with SnapPoints
         if (candidateData.firstOrNull == null) return const SizedBox();
         final components = context.components.multiDayComponents.bodyComponents;
 
+        if (_isHorizontal) {
+          // Horizontal mode: time axis is horizontal (scroll left/right), pages are vertical (top/bottom).
+          final scrollTriggerWidth = scrollTrigger.triggerHeight?.call(pageWidth) ?? pageWidth / 20;
+          final scrollAmount = scrollTrigger.scrollAmount?.call(pageWidth) ?? pageWidth / 2.5;
+          final pageTriggerHeight = viewPortHeight / 50;
+
+          final leftScrollTrigger = CursorNavigationTrigger(
+            triggerDelay: scrollTrigger.triggerDelay,
+            onTrigger: () => scrollController.animateTo(
+              scrollController.offset - scrollAmount,
+              duration: scrollTrigger.animationDuration,
+              curve: scrollTrigger.animationCurve,
+            ),
+            child: components.leftTriggerBuilder?.call(pageWidth) ??
+                SizedBox(width: scrollTriggerWidth, height: viewPortHeight),
+          );
+
+          final rightScrollTrigger = CursorNavigationTrigger(
+            triggerDelay: scrollTrigger.triggerDelay,
+            onTrigger: () => scrollController.animateTo(
+              scrollController.offset + scrollAmount,
+              duration: scrollTrigger.animationDuration,
+              curve: scrollTrigger.animationCurve,
+            ),
+            child: components.rightTriggerBuilder?.call(pageWidth) ??
+                SizedBox(width: scrollTriggerWidth, height: viewPortHeight),
+          );
+
+          final topPageTrigger = CursorNavigationTrigger(
+            triggerDelay: pageTrigger.triggerDelay,
+            onTrigger: () => viewController.animateToPreviousPage(
+              duration: pageTrigger.animationDuration,
+              curve: pageTrigger.animationCurve,
+            ),
+            child: components.topTriggerBuilder?.call(viewPortHeight) ??
+                SizedBox(height: pageTriggerHeight, width: pageWidth),
+          );
+
+          final bottomPageTrigger = CursorNavigationTrigger(
+            triggerDelay: pageTrigger.triggerDelay,
+            onTrigger: () => viewController.animateToNextPage(
+              duration: pageTrigger.animationDuration,
+              curve: pageTrigger.animationCurve,
+            ),
+            child: components.bottomTriggerBuilder?.call(viewPortHeight) ??
+                SizedBox(height: pageTriggerHeight, width: pageWidth),
+          );
+
+          return Stack(
+            children: [
+              PositionedDirectional(start: 0, end: 0, child: topPageTrigger),
+              PositionedDirectional(start: 0, end: 0, bottom: 0, child: bottomPageTrigger),
+              PositionedDirectional(start: 0, top: 0, bottom: 0, child: leftScrollTrigger),
+              PositionedDirectional(end: 0, top: 0, bottom: 0, child: rightScrollTrigger),
+            ],
+          );
+        }
+
+        // Vertical mode (default): time axis is vertical (scroll up/down), pages are horizontal (left/right).
         final triggerWidth = pageWidth / 50;
         final rightTrigger = CursorNavigationTrigger(
           triggerDelay: pageTrigger.triggerDelay,

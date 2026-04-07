@@ -92,8 +92,9 @@ class HourLines extends StatelessWidget with TimeLineUtils {
         viewController.viewConfiguration.isHorizontal;
 
     final timelineItemSize = largestTextSize(context, textStyle(context), textPadding(context));
+    final segmentItemSize = isHorizontal ? timelineItemSize.width : timelineItemSize.height;
     final segments = timeOfDayRange.splitIntoSegments(
-      segmentDuration(timeOfDayRange, heightPerMinute, timelineItemSize.height),
+      segmentDuration(timeOfDayRange, heightPerMinute, segmentItemSize),
     );
 
     final thickness = style?.thickness ?? 1;
